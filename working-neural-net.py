@@ -23,8 +23,8 @@ flags.DEFINE_integer('batch_size', 4, 'Batch size.  '
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 flags.DEFINE_boolean('fake_data', False, 'If true, uses fake data '
                      'for unit testing.')
-NUM_CLASSES = 2 
-IMAGE_SIZE = 28 
+NUM_CLASSES = 2
+IMAGE_SIZE = 2
 CHANNELS = 3
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
 
