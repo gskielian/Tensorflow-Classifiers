@@ -41,7 +41,9 @@ example:
 
 ## Contributing
 
-Feel free to contribute, branch naming conventions below:
+Feel free to contribute, please adhere to branch-naming conventions and have the license file in the branch:
+
+### branch naming conventions below:
 
 `<description-of-branch>-<type-of-network><github-username>`
 
@@ -51,4 +53,6 @@ if we have a cat and dog classifier, fully-connected feed-forward neural net, an
 
 `cat-dog-classifier-fc-ffnn-gskielian`
 
-thanks!
+### Add usage notes to your README
+Lastly please feel free to add to the readme for appropriate usage of your branch.
+
