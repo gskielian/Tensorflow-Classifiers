@@ -57,6 +57,7 @@ for filename in dog_image_paths:
   image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
   train_images.append(np.array(image))
 
+
 NUMBER_OF_CAT_IMAGES = len(cat_image_paths)
 NUMBER_OF_DOG_IMAGES = len(dog_image_paths)
 label = [1]*NUMBER_OF_CAT_IMAGES + [0]*NUMBER_OF_DOG_IMAGES
