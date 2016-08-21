@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
 
 import time
@@ -71,7 +75,7 @@ test_images = []
 #  image = Image.open(filename)
 #  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
 #  test_images.append(np.array(image))
-for filename in ['cats/1.jpg','cats/2.jpg']:
+for filename in ['dogs/1.jpg','cats/1.jpg']:
   image = Image.open(filename)
   image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
   test_images.append(np.array(image))
@@ -94,4 +98,4 @@ with tf.Graph().as_default():
 
   predict_score = norm_score.eval(session = sess,feed_dict={images_placeholder: test_images})
   print("[   dog score        cat score     ]")
-  print predict_score
+  print(predict_score)

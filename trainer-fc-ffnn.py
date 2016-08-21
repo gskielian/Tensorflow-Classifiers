@@ -1,6 +1,11 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
 
 import time
+import os
 import math
 import numpy
 import numpy as np
@@ -18,16 +23,51 @@ flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
-flags.DEFINE_integer('batch_size', 4, 'Batch size.  '
+flags.DEFINE_integer('batch_size', 16, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
-flags.DEFINE_boolean('fake_data', False, 'If true, uses fake data '
-                     'for unit testing.')
+
 NUM_CLASSES = 2
 IMAGE_SIZE = 28
 CHANNELS = 3
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
-NUMBER_OF_INPUTS=8 #total number of images
+#NUMBER_OF_INPUTS=8 #now determined by direct counting
+
+# Get the sets of images and labels for training, validation, and
+train_images = []
+
+
+def get_image_paths_in_folder(folder_name):
+  image_paths = [os.path.join(folder, pic)
+      for folder, subs, pics, in os.walk(".")
+      for pic in pics if pic.endswith(".jpg") and folder.startswith(folder_name)]
+  return image_paths
+
+cat_image_paths = get_image_paths_in_folder("./cats")
+dog_image_paths = get_image_paths_in_folder("./dogs")
+#print cat_image_paths
+#print dog_image_paths
+
+for filename in cat_image_paths:
+  image = Image.open(filename)
+  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
+  train_images.append(np.array(image))
+for filename in dog_image_paths:
+  image = Image.open(filename)
+  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
+  train_images.append(np.array(image))
+
+NUMBER_OF_CAT_IMAGES = len(cat_image_paths)
+NUMBER_OF_DOG_IMAGES = len(dog_image_paths)
+label = [1]*NUMBER_OF_CAT_IMAGES + [0]*NUMBER_OF_DOG_IMAGES
+print(np.array(label))
+train_labels = np.array(label)
+
+NUMBER_OF_INPUTS = NUMBER_OF_CAT_IMAGES + NUMBER_OF_DOG_IMAGES
+
+train_images = np.array(train_images)
+train_images = train_images.reshape(NUMBER_OF_INPUTS,IMAGE_PIXELS)
+
 
 def inference(images, hidden1_units, hidden2_units):
   # Hidden 1
@@ -95,7 +135,7 @@ def do_eval(sess,
             data_set):
   # And run one epoch of eval.
   true_count = 0  # Counts the number of correct predictions.
-  steps_per_epoch = 8 // FLAGS.batch_size
+  steps_per_epoch = NUMBER_OF_INPUTS // FLAGS.batch_size
   num_examples = steps_per_epoch * FLAGS.batch_size
   for step in xrange(steps_per_epoch):
     feed_dict = fill_feed_dict(train_images,train_labels,
@@ -103,25 +143,9 @@ def do_eval(sess,
                                labels_placeholder)
     true_count += sess.run(eval_correct, feed_dict=feed_dict)
   precision = true_count / num_examples
-  print('  Num examples: %d  Num correct: %d  Precision @ 1: %0.04f' %
+  print('  Num examples: %d  Num correct: %d  Precision @1.00: %0.04f' %
         (num_examples, true_count, precision))
 
-# Get the sets of images and labels for training, validation, and
-train_images = []
-for filename in ['cats/1.jpg', 'cats/2.jpg', 'cats/3.jpg', 'cats/4.jpg']:
-  image = Image.open(filename)
-  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
-  train_images.append(np.array(image))
-for filename in ['dogs/1.jpg', 'dogs/2.jpg', 'dogs/3.jpg', 'dogs/4.jpg']:
-  image = Image.open(filename)
-  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
-  train_images.append(np.array(image))
-
-train_images = np.array(train_images)
-train_images = train_images.reshape(8,IMAGE_PIXELS)
-
-label = [1,1,1,1,0,0,0,0]
-train_labels = np.array(label)
 
 def run_training():
   # Tell TensorFlow that the model will be built into the default Graph.
