@@ -66,7 +66,9 @@ NUMBER_OF_DOG_IMAGES = len(dog_image_paths)
 
 label = [1]*NUMBER_OF_CAT_IMAGES + [0]*NUMBER_OF_DOG_IMAGES
 print(np.array(label))
-train_labels.append(np.array(label))
+train_labels = tf.pack(np.array(label))
+
+print(train_labels.get_shape()[0])
 
 NUMBER_OF_INPUTS = NUMBER_OF_CAT_IMAGES + NUMBER_OF_DOG_IMAGES
 
@@ -87,7 +89,7 @@ class DataSet(object):
     self.train_labels = train_labels
     self.batch_size = batch_size
     self.batch_index = 0
-    self.last_index = len(train_labels) - 1
+    self.last_index = train_labels.get_shape()[0] - 1
 
   def next_batch(self):
     temp_batch_index = self.batch_index
@@ -98,7 +100,6 @@ class DataSet(object):
     # if within bounds, send over the labels and images
     if end_index <= self.last_index:
       self.batch_index += 1
-      return mages[start_index:end_index]
       return self.train_images[start_index:end_index], self.train_labels[start_index:end_index]
     # else if out of bounds, then wrap around
     # TODO is this where we mark an epoch?
@@ -172,14 +173,15 @@ def fill_feed_dict(data_set, images_pl, labels_pl):
   images_feed, labels_feed = data_set.next_batch()
 
   images_feed_tensor = tf.convert_to_tensor(images_feed, dtype=tf.float32)
+  labels_feed_tensor = tf.convert_to_tensor(labels_feed, dtype=tf.int32)
   print("images shape is: ")
   print(images_feed_tensor)
   print("labels shape is: ")
-  print(labels_feed.get_shape())
+  print(labels_feed_tensor)
 
   feed_dict = {
-      images_pl: images_feed,
-      labels_pl: labels_feed,
+      images_pl: images_feed_tensor,
+      labels_pl: labels_feed_tensor,
   }
   return feed_dict
 

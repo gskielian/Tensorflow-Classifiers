@@ -31,34 +31,72 @@ NUM_CLASSES = 2
 IMAGE_SIZE = 28
 CHANNELS = 3
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
-#NUMBER_OF_INPUTS=8 #now determined by direct counting
-
 # Get the sets of images and labels for training, validation, and
 train_images = []
 train_labels = []
 
-
-filename_queue = tf.train.string_input_producer(
-        tf.train.match_filenames_once("./cats/*.jpg"))
-
 image_reader = tf.WholeFileReader()
 
+"""start get image paths"""
+
+def get_image_paths_in_folder(folder_name):
+  image_paths = [os.path.join(folder, pic)
+      for folder, subs, pics, in os.walk(".")
+      for pic in pics if pic.endswith(".jpg") and folder.startswith(folder_name)]
+  return image_paths
+
+cat_image_paths = get_image_paths_in_folder("./cats")
+dog_image_paths = get_image_paths_in_folder("./dogs")
+
+for filename in cat_image_paths:
+  image = Image.open(filename)
+  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
+  train_images.append(np.array(image))
+for filename in dog_image_paths:
+  image = Image.open(filename)
+  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
+  train_images.append(np.array(image))
+
+NUMBER_OF_CAT_IMAGES = len(cat_image_paths)
+NUMBER_OF_DOG_IMAGES = len(dog_image_paths)
+
+"""end get image paths"""
+all_image_paths = cat_image_paths + dog_image_paths
+#print(all_image_paths)
+
+filename_queue = tf.train.string_input_producer(all_image_paths, num_epochs = None)
+
+#print(filename_queue)
+
+print(image_reader.read(filename_queue))
 
 _, image_file = image_reader.read(filename_queue)
 
-image = tf.image.decode_jpeg(image_file)
-resized_image = tf.image.resize_images(image, 28, 28)
+images = tf.image.decode_jpeg(image_file)
+
+
+#this is now done beforehand with the imagemagick convert script
+#resized_image = tf.image.resize_images(image, 28, 28) 
+
 
 with tf.Session() as sess:
-    tf.initialize_all_variables().run()
-
+    init = tf.initialize_all_variables()
+    sess.run(init)
 
     coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(coord=coord)
+    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
 
-    image_tensor = sess.run([resized_image])
-    print(resized_image)
 
+    image_tensor = []
+    for i in range(2):
+        image_tensor.append(sess.run(images))
+
+    #print individual images
+    print(image_tensor[0])
+    time.sleep(1)
+    print(image_tensor[1])
+
+    #print(image_tensor)
     coord.request_stop()
     coord.join(threads)
