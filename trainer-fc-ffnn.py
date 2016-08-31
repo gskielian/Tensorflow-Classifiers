@@ -20,8 +20,8 @@ import tensorflow as tf
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 2, 'Number of steps to run trainer.')
-flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
+flags.DEFINE_integer('max_steps', 256, 'Number of steps to run trainer.')
+flags.DEFINE_integer('hidden1', 64, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
 flags.DEFINE_integer('batch_size', 4, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
@@ -38,6 +38,9 @@ train_images = []
 train_labels = []
 
 
+image_reader = tf.WholeFileReader()
+
+"""start get image paths"""
 
 def get_image_paths_in_folder(folder_name):
   image_paths = [os.path.join(folder, pic)
@@ -62,18 +65,20 @@ for filename in dog_image_paths:
 NUMBER_OF_CAT_IMAGES = len(cat_image_paths)
 NUMBER_OF_DOG_IMAGES = len(dog_image_paths)
 
+"""end get image paths"""
 
+#start getting labels in format
 
 label = [1]*NUMBER_OF_CAT_IMAGES + [0]*NUMBER_OF_DOG_IMAGES
-print(np.array(label))
-train_labels = tf.pack(np.array(label))
+train_labels = np.array(label)
 
-print(train_labels.get_shape()[0])
 
 NUMBER_OF_INPUTS = NUMBER_OF_CAT_IMAGES + NUMBER_OF_DOG_IMAGES
 
 train_images = np.array(train_images)
 train_images = train_images.reshape(NUMBER_OF_INPUTS,IMAGE_PIXELS)
+
+
 
 
 #dataset class for feeding next batch
@@ -89,7 +94,7 @@ class DataSet(object):
     self.train_labels = train_labels
     self.batch_size = batch_size
     self.batch_index = 0
-    self.last_index = train_labels.get_shape()[0] - 1
+    self.last_index = len(train_labels) - 1
 
   def next_batch(self):
     temp_batch_index = self.batch_index
@@ -113,7 +118,8 @@ class DataSet(object):
 #create data_set object similar to way in which MNIST example was created
 data_set = DataSet(train_images, train_labels, FLAGS.batch_size)
 
-print(data_set.batch_size)
+
+test_images, test_labels = data_set.next_batch()
 
 
 def inference(images, hidden1_units, hidden2_units):
@@ -172,16 +178,9 @@ def fill_feed_dict(data_set, images_pl, labels_pl):
 
   images_feed, labels_feed = data_set.next_batch()
 
-  images_feed_tensor = tf.convert_to_tensor(images_feed, dtype=tf.float32)
-  labels_feed_tensor = tf.convert_to_tensor(labels_feed, dtype=tf.int32)
-  print("images shape is: ")
-  print(images_feed_tensor)
-  print("labels shape is: ")
-  print(labels_feed_tensor)
-
   feed_dict = {
-      images_pl: images_feed_tensor,
-      labels_pl: labels_feed_tensor,
+      images_pl: images_feed,
+      labels_pl: labels_feed
   }
   return feed_dict
 
@@ -243,17 +242,17 @@ def run_training():
       _, loss_value = sess.run([train_op, loss],
                                feed_dict=feed_dict)
       duration = time.time() - start_time
-      if step % 100 == 0:
+      if step % 2 == 0:
         # Print status to stdout.
         print('Step %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
-      if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
+      if (step + 1) % 4 == 0 or (step + 1) == FLAGS.max_steps:
         saver.save(sess, FLAGS.train_dir, global_step=step)
         print('Training Data Eval:')
         do_eval(sess,
                 eval_correct,
                 images_placeholder,
                 labels_placeholder,
-                train_images)
+                data_set)
 
 
 def main(_):
