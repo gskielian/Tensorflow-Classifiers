@@ -75,7 +75,7 @@ test_images = []
 #  image = Image.open(filename)
 #  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
 #  test_images.append(np.array(image))
-for filename in ['dogs/0.jpg','cats/0.jpg']:
+for filename in ['../dogs/8.jpg','../cats/8.jpg']:
   image = Image.open(filename)
   image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
   test_images.append(np.array(image))

@@ -20,10 +20,10 @@ import tensorflow as tf
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
+flags.DEFINE_integer('max_steps', 2, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
-flags.DEFINE_integer('batch_size', 16, 'Batch size.  '
+flags.DEFINE_integer('batch_size', 4, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 
@@ -35,6 +35,8 @@ IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
 
 # Get the sets of images and labels for training, validation, and
 train_images = []
+train_labels = []
+
 
 
 def get_image_paths_in_folder(folder_name):
@@ -57,17 +59,60 @@ for filename in dog_image_paths:
   image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
   train_images.append(np.array(image))
 
-
 NUMBER_OF_CAT_IMAGES = len(cat_image_paths)
 NUMBER_OF_DOG_IMAGES = len(dog_image_paths)
+
+
+
 label = [1]*NUMBER_OF_CAT_IMAGES + [0]*NUMBER_OF_DOG_IMAGES
 print(np.array(label))
-train_labels = np.array(label)
+train_labels.append(np.array(label))
 
 NUMBER_OF_INPUTS = NUMBER_OF_CAT_IMAGES + NUMBER_OF_DOG_IMAGES
 
 train_images = np.array(train_images)
 train_images = train_images.reshape(NUMBER_OF_INPUTS,IMAGE_PIXELS)
+
+
+#dataset class for feeding next batch
+class DataSet(object):
+  train_images = []
+  train_labels = []
+  batch_index = 0
+  batch_size = 1
+  last_index = 0
+
+  def __init__(self, train_images, train_labels, batch_size):
+    self.train_images = train_images
+    self.train_labels = train_labels
+    self.batch_size = batch_size
+    self.batch_index = 0
+    self.last_index = len(train_labels) - 1
+
+  def next_batch(self):
+    temp_batch_index = self.batch_index
+    start_index = temp_batch_index * self.batch_size
+    #end index is one batch ahead of start
+    end_index = (temp_batch_index + 1 ) * self.batch_size
+
+    # if within bounds, send over the labels and images
+    if end_index <= self.last_index:
+      self.batch_index += 1
+      return mages[start_index:end_index]
+      return self.train_images[start_index:end_index], self.train_labels[start_index:end_index]
+    # else if out of bounds, then wrap around
+    # TODO is this where we mark an epoch?
+    else:
+      self.batch_index = 0
+      temp_batch_index = self.batch_index
+      start_index = self.batch_index * self.batch_size
+      end_index = (self.batch_index + 1 ) * self.batch_size
+      return self.train_images[start_index:end_index], self.train_labels[start_index:end_index]
+
+#create data_set object similar to way in which MNIST example was created
+data_set = DataSet(train_images, train_labels, FLAGS.batch_size)
+
+print(data_set.batch_size)
 
 
 def inference(images, hidden1_units, hidden2_units):
@@ -122,7 +167,16 @@ def placeholder_inputs(batch_size):
   labels_placeholder = tf.placeholder(tf.int32, shape=(batch_size))
   return images_placeholder, labels_placeholder
 
-def fill_feed_dict(images_feed,labels_feed, images_pl, labels_pl):
+def fill_feed_dict(data_set, images_pl, labels_pl):
+
+  images_feed, labels_feed = data_set.next_batch()
+
+  images_feed_tensor = tf.convert_to_tensor(images_feed, dtype=tf.float32)
+  print("images shape is: ")
+  print(images_feed_tensor)
+  print("labels shape is: ")
+  print(labels_feed.get_shape())
+
   feed_dict = {
       images_pl: images_feed,
       labels_pl: labels_feed,
@@ -131,15 +185,14 @@ def fill_feed_dict(images_feed,labels_feed, images_pl, labels_pl):
 
 def do_eval(sess,
             eval_correct,
-            images_placeholder,
-            labels_placeholder,
+            images_placeholder, labels_placeholder,
             data_set):
   # And run one epoch of eval.
   true_count = 0  # Counts the number of correct predictions.
   steps_per_epoch = NUMBER_OF_INPUTS // FLAGS.batch_size
   num_examples = steps_per_epoch * FLAGS.batch_size
   for step in xrange(steps_per_epoch):
-    feed_dict = fill_feed_dict(train_images,train_labels,
+    feed_dict = fill_feed_dict(data_set,
                                images_placeholder,
                                labels_placeholder)
     true_count += sess.run(eval_correct, feed_dict=feed_dict)
@@ -152,7 +205,7 @@ def run_training():
   # Tell TensorFlow that the model will be built into the default Graph.
   with tf.Graph().as_default():
     # Generate placeholders for the images and labels.
-    images_placeholder, labels_placeholder = placeholder_inputs(NUMBER_OF_INPUTS)
+    images_placeholder, labels_placeholder = placeholder_inputs(FLAGS.batch_size)
 
     # Build a Graph that computes predictions from the inference model.
     logits = inference(images_placeholder,
@@ -181,9 +234,10 @@ def run_training():
     # And then after everything is built, start the training loop.
     for step in xrange(FLAGS.max_steps):
       start_time = time.time()
-      feed_dict = fill_feed_dict(train_images,train_labels,
-                                 images_placeholder,
-                                 labels_placeholder)
+      feed_dict = fill_feed_dict(data_set,images_placeholder,labels_placeholder)
+      #feed_dict = fill_feed_dict(train_images,train_labels,
+      #                           images_placeholder,
+      #                           labels_placeholder)
       _, loss_value = sess.run([train_op, loss],
                                feed_dict=feed_dict)
       duration = time.time() - start_time
