@@ -19,17 +19,17 @@ import tensorflow as tf
 # syntax is flags.define_<type_of_variable>(variable_name, value, description)
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 256, 'Number of steps to run trainer.')
-flags.DEFINE_integer('hidden1', 64, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
-flags.DEFINE_integer('batch_size', 4, 'Batch size.  '
+flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
+flags.DEFINE_integer('max_steps', 500, 'Number of steps to run trainer.')
+flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
+flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('batch_size', 10, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 
 NUM_CLASSES = 2
 IMAGE_SIZE = 28
-CHANNELS = 3
+CHANNELS = 1
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
 #NUMBER_OF_INPUTS=8 #now determined by direct counting
 
@@ -45,11 +45,11 @@ image_reader = tf.WholeFileReader()
 def get_image_paths_in_folder(folder_name):
   image_paths = [os.path.join(folder, pic)
       for folder, subs, pics, in os.walk(".")
-      for pic in pics if pic.endswith(".jpg") and folder.startswith(folder_name)]
+      for pic in pics if pic.endswith(".png") and folder.startswith(folder_name)]
   return image_paths
 
-cat_image_paths = get_image_paths_in_folder("./cats")
-dog_image_paths = get_image_paths_in_folder("./dogs")
+cat_image_paths = get_image_paths_in_folder("./mnist_png/testing/0")
+dog_image_paths = get_image_paths_in_folder("./mnist_png/testing/1")
 #print cat_image_paths
 #print dog_image_paths
 
@@ -69,7 +69,7 @@ NUMBER_OF_DOG_IMAGES = len(dog_image_paths)
 
 #start getting labels in format
 
-label = [1]*NUMBER_OF_CAT_IMAGES + [0]*NUMBER_OF_DOG_IMAGES
+label = [0]*NUMBER_OF_CAT_IMAGES + [1]*NUMBER_OF_DOG_IMAGES
 train_labels = np.array(label)
 
 
@@ -245,7 +245,7 @@ def run_training():
       if step % 2 == 0:
         # Print status to stdout.
         print('Step %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
-      if (step + 1) % 4 == 0 or (step + 1) == FLAGS.max_steps:
+      if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
         saver.save(sess, FLAGS.train_dir, global_step=step)
         print('Training Data Eval:')
         do_eval(sess,

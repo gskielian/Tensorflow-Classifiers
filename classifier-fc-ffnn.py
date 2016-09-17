@@ -16,14 +16,14 @@ from six.moves import xrange
 # syntax is flags.define_<type_of_variable>(variable_name, value, description)
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_integer('hidden1', 64, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
+flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
 
 NUM_CLASSES = 2
 IMAGE_SIZE = 28
-CHANNELS = 3
+CHANNELS = 1
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
-NUMBER_OF_TEST_IMAGES=2 #total number of test images
+NUMBER_OF_TEST_IMAGES=3 #total number of test images
 
 def inference(images, hidden1_units, hidden2_units):
   # Hidden 1
@@ -75,7 +75,7 @@ test_images = []
 #  image = Image.open(filename)
 #  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
 #  test_images.append(np.array(image))
-for filename in ['test_images/test_dog.jpg','test_images/test_cat.jpg']:
+for filename in ['mnist_png/testing/0/10.png','mnist_png/testing/1/1004.png','mnist_png/testing/1/1008.png']:
   image = Image.open(filename)
   image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
   test_images.append(np.array(image))
@@ -94,8 +94,8 @@ with tf.Graph().as_default():
   sess = tf.Session()
   init = tf.initialize_all_variables()
   sess.run(init)
-  saver.restore(sess, "./data-255")
+  saver.restore(sess, "./data-499")
 
   predict_score = norm_score.eval(session = sess,feed_dict={images_placeholder: test_images})
-  print("[   dog score        cat score     ]")
+  print("[   0        1     ]")
   print(predict_score)
