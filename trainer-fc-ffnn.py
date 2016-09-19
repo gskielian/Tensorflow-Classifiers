@@ -20,10 +20,10 @@ import tensorflow as tf
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 500, 'Number of steps to run trainer.')
+flags.DEFINE_integer('max_steps', 100, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
-flags.DEFINE_integer('batch_size', 10, 'Batch size.  '
+flags.DEFINE_integer('batch_size', 50, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 
@@ -164,25 +164,26 @@ def inference(images, hidden1_units, hidden2_units):
     h_pool_2_flat = tf.reshape(h_pool_2, [-1, 7*7*64])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool_2_flat, W_fc1) + b_fc1)
 
-    keep_prob = tf.constant(0.1, dtype=tf.float32)
-    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+    #keep_prob = tf.constant(0.2, dtype=tf.float32)
+    #h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
   # Readout Layer
   with tf.name_scope('softmax_linear'):
     W_fc2 = weight_variable([1024, 10])
     b_fc2 = bias_variable([10])
 
-    logits = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
+    logits = tf.matmul(h_fc1, W_fc2) + b_fc2
+    y_conv = tf.nn.softmax(logits)
+
   return logits
 
 def cal_loss(logits, labels):
   labels = tf.to_int64(labels)
-  cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-      logits, labels, name='xentropy')
+  cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels, name='xentropy')
   loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
   return loss
 
 def training(loss, learning_rate):
-  optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+  optimizer = tf.train.AdamOptimizer(learning_rate)
   global_step = tf.Variable(0, name='global_step', trainable=False)
   train_op = optimizer.minimize(loss, global_step=global_step)
   return train_op
@@ -192,8 +193,8 @@ def evaluation(logits, labels):
   return tf.reduce_sum(tf.cast(correct, tf.int32))
 
 def placeholder_inputs(batch_size):
-  images_placeholder = tf.placeholder(tf.float32, shape=(batch_size,IMAGE_PIXELS))
-  labels_placeholder = tf.placeholder(tf.int32, shape=(batch_size))
+  images_placeholder = tf.placeholder(tf.float32, shape=[batch_size,IMAGE_PIXELS])
+  labels_placeholder = tf.placeholder(tf.int32, shape=[batch_size])
   return images_placeholder, labels_placeholder
 
 def fill_feed_dict(data_set, images_pl, labels_pl):
@@ -275,7 +276,6 @@ def run_training():
                 images_placeholder,
                 labels_placeholder,
                 data_set)
-
 
 def main(_):
   run_training()
