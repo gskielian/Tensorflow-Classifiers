@@ -20,14 +20,14 @@ import tensorflow as tf
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 100, 'Number of steps to run trainer.')
+flags.DEFINE_integer('max_steps', 10000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
 flags.DEFINE_integer('batch_size', 50, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 
-NUM_CLASSES = 2
+NUM_CLASSES = 10
 IMAGE_SIZE = 28
 CHANNELS = 1
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
@@ -37,6 +37,9 @@ IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
 train_images = []
 train_labels = []
 
+training_image_paths = []
+training_image_numbers = []
+labels = []
 
 image_reader = tf.WholeFileReader()
 
@@ -48,32 +51,32 @@ def get_image_paths_in_folder(folder_name):
       for pic in pics if pic.endswith(".png") and folder.startswith(folder_name)]
   return image_paths
 
-cat_image_paths = get_image_paths_in_folder("./mnist_png/testing/0")
-dog_image_paths = get_image_paths_in_folder("./mnist_png/testing/1")
-#print cat_image_paths
-#print dog_image_paths
+for x in xrange(NUM_CLASSES):
+  training_image_paths.append(get_image_paths_in_folder("./mnist_png/testing/" + str(x)))
 
-for filename in cat_image_paths:
-  image = Image.open(filename)
-  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
-  train_images.append(np.array(image))
-for filename in dog_image_paths:
-  image = Image.open(filename)
-  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
-  train_images.append(np.array(image))
 
-NUMBER_OF_CAT_IMAGES = len(cat_image_paths)
-NUMBER_OF_DOG_IMAGES = len(dog_image_paths)
+#append all images to a single array
+for x in xrange(NUM_CLASSES):
+  for filename in training_image_paths[x]:
+    image = Image.open(filename)
+    image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
+    train_images.append(np.array(image))
+
+#get the lengths of each into an array
+for x in xrange(NUM_CLASSES):
+  training_image_numbers.append(len(training_image_paths[x]))
 
 """end get image paths"""
 
 #start getting labels in format
 
-label = [0]*NUMBER_OF_CAT_IMAGES + [1]*NUMBER_OF_DOG_IMAGES
-train_labels = np.array(label)
+for x in xrange(NUM_CLASSES):
+  labels += [x]*training_image_numbers[x]
+
+train_labels = np.array(labels)
 
 
-NUMBER_OF_INPUTS = NUMBER_OF_CAT_IMAGES + NUMBER_OF_DOG_IMAGES
+NUMBER_OF_INPUTS = len(train_images)
 
 train_images = np.array(train_images)
 train_images = train_images.reshape(NUMBER_OF_INPUTS,IMAGE_PIXELS)
