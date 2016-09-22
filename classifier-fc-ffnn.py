@@ -16,14 +16,12 @@ from six.moves import xrange
 # syntax is flags.define_<type_of_variable>(variable_name, value, description)
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
 
 NUM_CLASSES = 10
 IMAGE_SIZE = 28
 CHANNELS = 1
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * CHANNELS
-NUMBER_OF_TEST_IMAGES=3 #total number of test images
+NUMBER_OF_TEST_IMAGES=4 #total number of test images
 
 def weight_variable(shape):
   initial = tf.truncated_normal(shape, stddev=0.1)
@@ -39,7 +37,7 @@ def conv2d(x, W):
 def max_pool_2x2(x):
   return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
-def inference(images, hidden1_units, hidden2_units):
+def inference(images):
 
   # Convolutional - 1
   with tf.name_scope('h_conv_1'):
@@ -101,7 +99,7 @@ test_images = []
 #  image = Image.open(filename)
 #  image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
 #  test_images.append(np.array(image))
-for filename in ['mnist_png/testing/0/10.png','mnist_png/testing/1/1004.png','mnist_png/testing/1/1008.png']:
+for filename in ['mnist_png/testing/0/10.png','mnist_png/testing/1/1004.png','mnist_png/testing/1/1008.png','mnist_png/testing/9/1000.png']:
   image = Image.open(filename)
   image = image.resize((IMAGE_SIZE,IMAGE_SIZE))
   test_images.append(np.array(image))
@@ -111,17 +109,15 @@ test_images = test_images.reshape(NUMBER_OF_TEST_IMAGES,IMAGE_PIXELS)
 
 with tf.Graph().as_default():
   images_placeholder, labels_placeholder = placeholder_inputs(NUMBER_OF_TEST_IMAGES)
-  logits = inference(images_placeholder,
-      FLAGS.hidden1,
-      FLAGS.hidden2)
+  logits = inference(images_placeholder)
   loss = cal_loss(logits, labels_placeholder)
   norm_score = tf.nn.softmax(logits)
   saver = tf.train.Saver()
   sess = tf.Session()
   init = tf.initialize_all_variables()
   sess.run(init)
-  saver.restore(sess, "./data-9999")
+  saver.restore(sess, "./data-19999")
 
   predict_score = norm_score.eval(session = sess,feed_dict={images_placeholder: test_images})
-  print("[   0        1     ]")
+  print("[   0        1      2   3  4 5 6 7  8 9 ]")
   print(predict_score)

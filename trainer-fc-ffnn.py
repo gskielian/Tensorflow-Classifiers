@@ -20,12 +20,10 @@ import tensorflow as tf
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 10000, 'Number of steps to run trainer.')
-flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 64, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('max_steps', 20000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('batch_size', 50, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
-flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
+flags.DEFINE_string('train_checkpoint', 'data', 'checkpoint saver prefix')
 
 NUM_CLASSES = 10
 IMAGE_SIZE = 28
@@ -137,7 +135,7 @@ def max_pool_2x2(x):
 
 
 
-def inference(images, hidden1_units, hidden2_units):
+def inference(images):
 
   # Convolutional - 1
   with tf.name_scope('h_conv_1'):
@@ -235,9 +233,7 @@ def run_training():
     images_placeholder, labels_placeholder = placeholder_inputs(FLAGS.batch_size)
 
     # Build a Graph that computes predictions from the inference model.
-    logits = inference(images_placeholder,
-                             FLAGS.hidden1,
-                             FLAGS.hidden2)
+    logits = inference(images_placeholder)
 
     # Add to the Graph the Ops for loss calculation.
     loss = cal_loss(logits, labels_placeholder)
@@ -272,7 +268,7 @@ def run_training():
         # Print status to stdout.
         print('Step %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
       if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
-        saver.save(sess, FLAGS.train_dir, global_step=step)
+        saver.save(sess, FLAGS.train_checkpoint, global_step=step)
         print('Training Data Eval:')
         do_eval(sess,
                 eval_correct,
