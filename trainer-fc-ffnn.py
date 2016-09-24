@@ -20,7 +20,7 @@ import tensorflow as tf
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 20000, 'Number of steps to run trainer.')
+flags.DEFINE_integer('max_steps', 12000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('batch_size', 50, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_checkpoint', 'data', 'checkpoint saver prefix')
@@ -173,7 +173,6 @@ def inference(images):
     b_fc2 = bias_variable([10])
 
     logits = tf.matmul(h_fc1, W_fc2) + b_fc2
-    y_conv = tf.nn.softmax(logits)
 
   return logits
 
@@ -257,16 +256,18 @@ def run_training():
     # And then after everything is built, start the training loop.
     for step in xrange(FLAGS.max_steps):
       start_time = time.time()
+
       feed_dict = fill_feed_dict(data_set,images_placeholder,labels_placeholder)
-      #feed_dict = fill_feed_dict(train_images,train_labels,
-      #                           images_placeholder,
-      #                           labels_placeholder)
+
       _, loss_value = sess.run([train_op, loss],
                                feed_dict=feed_dict)
+
       duration = time.time() - start_time
+
       if step % 2 == 0:
         # Print status to stdout.
         print('Step %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
+
       if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
         saver.save(sess, FLAGS.train_checkpoint, global_step=step)
         print('Training Data Eval:')

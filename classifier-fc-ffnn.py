@@ -116,7 +116,7 @@ with tf.Graph().as_default():
   sess = tf.Session()
   init = tf.initialize_all_variables()
   sess.run(init)
-  saver.restore(sess, "./data-19999")
+  saver.restore(sess, "./data-11999")
 
   predict_score = norm_score.eval(session = sess,feed_dict={images_placeholder: test_images})
   print("[   0        1      2   3  4 5 6 7  8 9 ]")
